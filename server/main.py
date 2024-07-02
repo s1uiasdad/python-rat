@@ -2,7 +2,7 @@ import socket
 import threading
 
 SERVER = "0.0.0.0"
-PORT = input('Port >>> ')
+PORT = int(input('Port >>> '))
 
 # Khởi tạo server socket
 s = socket.socket()
