@@ -1,4 +1,4 @@
-# uac h
+# uac
 import subprocess
 import ctypes
 import sys
