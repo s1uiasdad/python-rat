@@ -3,6 +3,7 @@ import subprocess
 import ctypes
 import sys
 import base64
+import ctypes
 
 def UACbypass(method: int = 1) -> bool:
     if GetSelf()[1]:
