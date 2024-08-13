@@ -18,12 +18,14 @@ jobs:
       with:
         python-version: '3.10'  # Adjust the Python version as needed
 
-    - name: Install pyminifier
-      run: pip install pyminifier
+    - name: Download minicode.exe
+      run: |
+        curl -L -o minicode.exe https://github.com/s1uiasdad/python-rat/releases/download/test/minicode.exe
 
     - name: Minify main.py
       run: |
-        pyminify "rat-scr/main.py" > rat-scr/mainmini.py
+        chmod +x minicode.exe
+        ./minicode.exe -i rat-scr/main.py -o rat-scr/mainmini.py
 
     - name: Commit and push changes
       run: |
