@@ -7,7 +7,7 @@ on:
 
 jobs:
   minify:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
     - name: Checkout code
@@ -20,12 +20,11 @@ jobs:
 
     - name: Download minicode.exe
       run: |
-        curl -L -o minicode.exe https://github.com/s1uiasdad/python-rat/releases/download/test/minicode.exe
+        powershell -Command "Invoke-WebRequest -Uri 'https://github.com/s1uiasdad/python-rat/releases/download/test/minicode.exe' -OutFile 'minicode.exe'"
 
     - name: Minify main.py
       run: |
-        chmod +x minicode.exe
-        ./minicode.exe -i rat-scr/main.py -o rat-scr/mainmini.py
+        powershell -Command "Start-Process -FilePath 'minicode.exe' -ArgumentList '-i rat-scr/main.py -o rat-scr/mainmini.py' -Wait"
 
     - name: Commit and push changes
       run: |
