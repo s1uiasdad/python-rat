@@ -3,6 +3,8 @@ import subprocess
 import ctypes
 import sys
 import base64
+import os
+import shutil
 import ctypes
 
 ctypes.windll.user32.ShowWindow(ctypes.windll.kernel32.GetConsoleWindow(), 0)
