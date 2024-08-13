@@ -18,8 +18,8 @@ jobs:
       with:
         python-version: '3.x'  # Adjust the Python version as needed
 
-    - name: Install python-minifier
-      run: pip install python-minifier
+    - name: Install pyminifier
+      run: pip install pyminifier
 
     - name: Minify main.py
       run: |
