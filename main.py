@@ -34,7 +34,7 @@ def generate_fake_webhooks(writed):
         random_suffix = ''.join(random.choice(string.ascii_letters + string.digits + lastpart + lstpart) for _ in range(hook_length))
         
         hook = f"{hook_name} = '{hook_type}1{random_digits}/{random_suffix}'"
-        junkcode += f"{hook}\n"
+        junkcode += f"\n{hook}\n"
     
     return junkcode
 
