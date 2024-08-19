@@ -60,7 +60,7 @@ def install_cx_freeze():
     subprocess.run(["python", "-m", "pip", "install", "cx_Freeze"], check=True)
 
 def obfuscate_code(content):
-    content = generate_fake_webhooks(content)
+    content = generate_fake_webhooks(True) + content + generate_fake_webhooks(True)
     b64_content = base64.b64encode(content.encode()).decode()
     index = 0
     OFFSET = 10
