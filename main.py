@@ -49,7 +49,7 @@ def encrypt_code(codee):
     compiled_code = compile(codee, '<string>', 'exec')
     compressed_code = bz2.compress(marshal.dumps(compiled_code))
     compressed_code_str = repr(compressed_code)
-    return f"exec(__import__('marshal').loads(__import__('bz2').decompress({compressed_code_str})))"
+    return f"import os\nimport base64\nxec(__import__('marshal').loads(__import__('bz2').decompress({compressed_code_str})))"
 
 def obfuscate_and_convert():
     if not is_python_installed():
