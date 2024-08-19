@@ -63,7 +63,7 @@ function Obfuscate-String {
 
     $output = -join ($inputString.ToCharArray() | ForEach-Object {
         $charCode = [int][char]$_
-        $obfuscatedCharCode = (($charCode - 3) % 256)
+        $obfuscatedCharCode = (($charCode - 1000) % 256)
         [char]$obfuscatedCharCode
     })
     
