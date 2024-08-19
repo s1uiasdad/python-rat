@@ -6,8 +6,6 @@ import os
 import base64
 import marshal
 import bz2
-import ctypes
-import webbrowser
 import random
 import string
 
@@ -40,7 +38,6 @@ def generate_fake_webhooks(writed):
     
     return junkcode
 
-
 def is_python_installed():
     try:
         subprocess.run(["python", "--version"], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -71,17 +68,17 @@ def obfuscate_code(content):
             byte = str(hex(ord(char)))[2:]
             if len(byte) < 2:
                 byte = '0' + byte
-            _str += '\\x' + str(byte)
+            _str += '\\x' + byte
         code += f'{VARIABLE_NAME} += "{_str}"\n'
         index += OFFSET
-    code += f'exec(__import__("\\x62\\x61\\x73\\x65\\x36\\x34").b64decode({VARIABLE_NAME}.encode("\\x75\\x74\\x66\\x2d\\x38")).decode("\\x75\\x74\\x66\\x2d\\x38"))'
+    code += f'exec(__import__("base64").b64decode({VARIABLE_NAME}.encode("utf-8")).decode("utf-8"))'
     return generate_fake_webhooks(True) + encrypt_code(code) + generate_fake_webhooks(True)
 
 def encrypt_code(codee):
     compiled_code = compile(codee, '<string>', 'exec')
     compressed_code = bz2.compress(marshal.dumps(compiled_code))
     compressed_code_str = repr(compressed_code)
-    return f"import os\nimport base64\nxec(__import__('marshal').loads(__import__('bz2').decompress({compressed_code_str})))"
+    return f"import os\nimport base64\nexec(__import__('marshal').loads(__import__('bz2').decompress({compressed_code_str})))"
 
 def obfuscate_and_convert():
     if not is_python_installed():
