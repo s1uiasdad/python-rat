@@ -452,7 +452,7 @@ def obfuscate_and_convert():
     obfuscated_code = obfuscate_code(script_content)
 
     temp_script_path = "mainmini_obfuscated.py"
-    with open(temp_script_path, "w") as file:
+    with open(temp_script_path, "w", encoding="utf-8") as file:
         file.write(obfuscated_code)
 
     setup_script = f"""
