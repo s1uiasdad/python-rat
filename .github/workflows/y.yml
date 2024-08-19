@@ -32,7 +32,6 @@ jobs:
     - name: Install PyInstaller
       run: |
         pip install pyinstaller
-        pip install tkinter
 
     - name: DEBUG
       run: |
