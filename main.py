@@ -2,6 +2,21 @@ import os
 import platform
 import socket
 import threading
+import logging
+
+# Set up logging configuration
+log_file = "logs/server.log"
+os.makedirs(os.path.dirname(log_file), exist_ok=True)
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.FileHandler(log_file),
+        logging.StreamHandler()  # This logs to the console
+    ]
+)
+
 if platform.system().startswith("Windows"):
     try:
         from pystyle import *
